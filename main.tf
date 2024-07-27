@@ -2,6 +2,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
+provider "random" {
+  # Vous pouvez spécifier la version ici si nécessaire
+}
+
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
