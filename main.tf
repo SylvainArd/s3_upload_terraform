@@ -8,7 +8,7 @@ resource "aws_key_pair" "deployer" {
 }
 
 resource "aws_s3_bucket" "images_bucket" {
-  bucket = "my-images-bucket"
+  bucket = "sylvain-ard-123456" # il faut un nom unique pour le s3
 }
 
 resource "aws_s3_bucket_acl" "images_bucket_acl" {
@@ -29,7 +29,7 @@ resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
 }
 
 resource "aws_instance" "web_server" {
-  ami           = "ami-0c55b159cbfafe1f0" # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  ami           = "ami-00beae93a2d981137" 
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
@@ -49,6 +49,8 @@ resource "aws_instance" "web_server" {
   tags = {
     Name = "WebServer"
   }
+
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
 }
 
 resource "aws_security_group" "web_sg" {
@@ -75,24 +77,6 @@ resource "aws_security_group" "web_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_security_group_rule" "allow_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.web_sg.id
-}
-
-resource "aws_security_group_rule" "allow_ssh" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.web_sg.id
 }
 
 output "bucket_name" {
