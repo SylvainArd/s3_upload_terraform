@@ -1,9 +1,22 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 4.0.0"
+    }
+    random = {
+      source = "hashicorp/random"
+      version = ">= 3.1.0"
+    }
+  }
+}
+
 provider "aws" {
   region = "us-east-1"
 }
 
 provider "random" {
-  version = "~> 3.1"
+  # Configuration du fournisseur random sans contrainte de version
 }
 
 resource "random_id" "bucket_suffix" {
@@ -18,18 +31,26 @@ resource "aws_key_pair" "deployer" {
 resource "aws_s3_bucket" "images_bucket" {
   bucket = "sylvain-ard-${random_id.bucket_suffix.hex}"
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
-
   tags = {
     Name = "images_bucket"
   }
 }
 
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for S3 bucket"
+resource "aws_s3_bucket_acl" "images_bucket_acl" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
 }
 
 resource "aws_s3_bucket_policy" "images_bucket_policy" {
@@ -50,6 +71,10 @@ resource "aws_s3_bucket_policy" "images_bucket_policy" {
   ]
 }
 EOF
+}
+
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "OAI for S3 bucket"
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
