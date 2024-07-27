@@ -9,6 +9,10 @@ resource "aws_key_pair" "deployer" {
 
 resource "aws_s3_bucket" "images_bucket" {
   bucket = "my-images-bucket"
+}
+
+resource "aws_s3_bucket_acl" "images_bucket_acl" {
+  bucket = aws_s3_bucket.images_bucket.bucket
   acl    = "public-read"
 }
 
@@ -73,18 +77,22 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-resource "aws_network_interface" "web_server_eni" {
-  subnet_id       = aws_instance.web_server.subnet_id
-  security_groups = [aws_security_group.web_sg.id]
-  tags = {
-    Name = "WebServerENI"
-  }
+resource "aws_security_group_rule" "allow_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web_sg.id
 }
 
-resource "aws_network_interface_attachment" "web_server_eni_attachment" {
-  instance_id          = aws_instance.web_server.id
-  network_interface_id = aws_network_interface.web_server_eni.id
-  device_index         = 0
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web_sg.id
 }
 
 output "bucket_name" {
