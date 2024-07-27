@@ -2,22 +2,42 @@ provider "aws" {
   region = "us-east-1"
 }
 
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = var.key_name
   public_key = var.public_key
 }
 
 resource "aws_s3_bucket" "images_bucket" {
-  bucket = "my-unique-images-bucket-123456" # Changez ce nom pour un nom unique
-
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
+  bucket = "sylvain-ard-${random_id.bucket_suffix.hex}"
 
   tags = {
     Name = "images_bucket"
   }
+}
+
+resource "aws_s3_bucket_acl" "images_bucket_acl" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
+}
+
+resource "aws_s3_bucket_policy" "images_bucket_policy" {
+  bucket = aws_s3_bucket.images_bucket.id
 
   policy = <<EOF
 {
@@ -27,7 +47,7 @@ resource "aws_s3_bucket" "images_bucket" {
       "Effect": "Allow",
       "Principal": "*",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::my-unique-images-bucket-123456/*"
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.images_bucket.bucket}/*"
     }
   ]
 }
@@ -35,7 +55,7 @@ EOF
 }
 
 resource "aws_instance" "web_server" {
-  ami           = "ami-04505e74c0741db8d" # Utilisez une AMI valide pour votre région
+  ami           = "ami-00beae93a2d981137" 
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
 
