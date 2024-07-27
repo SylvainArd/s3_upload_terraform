@@ -60,6 +60,11 @@ resource "aws_iam_role_policy_attachment" "terraform_attach" {
   policy_arn = aws_iam_policy.terraform_policy.arn
 }
 
+resource "aws_iam_instance_profile" "instance_profile" {
+  name = "terraform-instance-profile"
+  role = aws_iam_role.terraform_role.name
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = var.key_name
   public_key = var.public_key
@@ -110,11 +115,6 @@ resource "aws_instance" "web_server" {
   }
 
   vpc_security_group_ids = [aws_security_group.web_sg.id]
-}
-
-resource "aws_iam_instance_profile" "instance_profile" {
-  name = "terraform-instance-profile"
-  role = aws_iam_role.terraform_role.name
 }
 
 resource "aws_security_group" "web_sg" {
