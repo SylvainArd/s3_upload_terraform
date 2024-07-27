@@ -67,6 +67,10 @@ resource "aws_key_pair" "deployer" {
 
 resource "aws_s3_bucket" "images_bucket" {
   bucket = "my-unique-images-bucket-123456" # Changez ce nom pour un nom unique
+}
+
+resource "aws_s3_bucket_acl" "images_bucket_acl" {
+  bucket = aws_s3_bucket.images_bucket.bucket
   acl    = "public-read"
 }
 
@@ -83,9 +87,9 @@ resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
 }
 
 resource "aws_instance" "web_server" {
-  ami           = "ami-04505e74c0741db8d" # Utilisez une AMI valide pour votre région
-  instance_type = "t2.micro"
-  key_name      = aws_key_pair.deployer.key_name
+  ami                  = "ami-04505e74c0741db8d" # Utilisez une AMI valide pour votre région
+  instance_type        = "t2.micro"
+  key_name             = aws_key_pair.deployer.key_name
   iam_instance_profile = aws_iam_instance_profile.instance_profile.name
 
   user_data = <<-EOF
