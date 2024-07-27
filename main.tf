@@ -10,10 +10,17 @@ resource "aws_key_pair" "deployer" {
 resource "aws_s3_bucket" "images_bucket" {
   bucket = "my-images-bucket"
   acl    = "public-read"
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
+resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
   }
 }
 
@@ -66,9 +73,18 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-resource "aws_instance_security_group_association" "web_sg_association" {
-  instance_id       = aws_instance.web_server.id
-  security_group_id = aws_security_group.web_sg.id
+resource "aws_network_interface" "web_server_eni" {
+  subnet_id       = aws_instance.web_server.subnet_id
+  security_groups = [aws_security_group.web_sg.id]
+  tags = {
+    Name = "WebServerENI"
+  }
+}
+
+resource "aws_network_interface_attachment" "web_server_eni_attachment" {
+  instance_id          = aws_instance.web_server.id
+  network_interface_id = aws_network_interface.web_server_eni.id
+  device_index         = 0
 }
 
 output "bucket_name" {
