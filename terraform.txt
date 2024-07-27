@@ -1,0 +1,11 @@
+# Initialiser Terraform
+terraform init
+
+# Générer le plan et l'enregistrer dans un fichier nommé tfplan
+terraform plan -var-file="terraform.tfvars" -out=tfplan
+
+# Appliquer le plan enregistré
+terraform apply "tfplan"
+
+# Détruire les ressources sans demande de confirmation
+terraform destroy -var-file="terraform.tfvars" -auto-approve
