@@ -67,11 +67,22 @@ resource "aws_key_pair" "deployer" {
 
 resource "aws_s3_bucket" "images_bucket" {
   bucket = "my-unique-images-bucket-123456" # Changez ce nom pour un nom unique
-  acl    = "public-read"
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
+resource "aws_s3_bucket_acl" "images_bucket_acl" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
+  bucket = aws_s3_bucket.images_bucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
   }
 }
 
