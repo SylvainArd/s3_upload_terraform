@@ -58,27 +58,18 @@ resource "aws_s3_bucket_policy" "images_bucket_policy" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "cloudfront.amazonaws.com"
+        "AWS": "${aws_cloudfront_origin_access_identity.oai.iam_arn}"
       },
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.images_bucket.bucket}/*",
-      "Condition": {
-        "StringEquals": {
-          "AWS:SourceArn": "${aws_cloudfront_distribution.s3_distribution.arn}"
-        }
-      }
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.images_bucket.bucket}/*"
     }
   ]
 }
 EOF
 }
 
-resource "aws_cloudfront_origin_access_control" "oac" {
-  name                              = "S3-OAC"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-  description                       = "OAC for S3 bucket"
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "OAI for S3 bucket"
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
@@ -86,7 +77,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     domain_name = "${aws_s3_bucket.images_bucket.bucket}.s3.amazonaws.com"
     origin_id   = "S3-${aws_s3_bucket.images_bucket.bucket}"
 
-    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+    }
   }
 
   enabled             = true
