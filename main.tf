@@ -15,10 +15,6 @@ provider "aws" {
   region = "us-east-1"
 }
 
-provider "random" {
-  # Configuration du fournisseur random sans contrainte de version
-}
-
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
@@ -33,18 +29,6 @@ resource "aws_s3_bucket" "images_bucket" {
 
   tags = {
     Name = "images_bucket"
-  }
-}
-
-resource "aws_s3_bucket_website_configuration" "images_bucket_website" {
-  bucket = aws_s3_bucket.images_bucket.bucket
-
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "error.html"
   }
 }
 
@@ -78,7 +62,6 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
-  description                       = "OAC for S3 bucket"
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
@@ -108,9 +91,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
   }
 
   viewer_certificate {
