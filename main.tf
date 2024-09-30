@@ -16,7 +16,6 @@ provider "aws" {
 }
 
 provider "random" {
-  # Configuration du fournisseur random sans contrainte de version
 }
 
 resource "random_id" "bucket_suffix" {
@@ -128,10 +127,72 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 }
 
+# Rôle IAM pour l'instance EC2
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2-s3-access-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+# Politique IAM pour autoriser l'accès à S3 depuis l'instance EC2
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "S3AccessPolicy"
+  description = "Politique permettant l'accès à S3 pour EC2"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::${aws_s3_bucket.images_bucket.bucket}",
+        "arn:aws:s3:::${aws_s3_bucket.images_bucket.bucket}/*"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+# Attachement de la politique IAM au rôle EC2
+resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
+# Création du profil d'instance pour attacher le rôle IAM à l'instance EC2
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "ec2-instance-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
+# Création de l'instance EC2 avec le rôle IAM pour accéder à S3
 resource "aws_instance" "web_server" {
   ami           = "ami-00beae93a2d981137"
   instance_type = "t2.micro"
   key_name      = aws_key_pair.deployer.key_name
+
+  # Attachement du profil d'instance pour le rôle IAM
+  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
 
   user_data = <<-EOF
     #!/bin/bash
